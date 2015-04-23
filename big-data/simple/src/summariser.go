@@ -39,7 +39,7 @@ func main() {
     fmt.Println("\nCalculating partner totals...")
     aggregatedTransactions := make(map[string]float32)
 
-    csvfile, err := os.Open("/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/transactions.csv")
+    csvfile, err := os.Open("/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/transactions2.csv")
     check(err)
     defer csvfile.Close()
 
@@ -57,18 +57,21 @@ func main() {
 
         fmt.Println(transactionLine)
         partnerName := transactionLine[0]
-        transactionCurrency := transactionLine[1]
-        transactionAmount,_ := strconv.ParseFloat(transactionLine[2],32)
-        if (transactionCurrency==homeCurrency) {
-            aggregatedTransactions[partnerName] = aggregatedTransactions[partnerName] + float32(transactionAmount)
-        } else {
-            aggregatedTransactions[partnerName] = aggregatedTransactions[partnerName] + (float32(transactionAmount)*exchangeRates[Key{transactionCurrency, homeCurrency}])
-        }
+        aggregatedTransactions[partnerName] = aggregatedTransactions[partnerName] + convertToHomeAmount(homeCurrency, exchangeRates, transactionLine)
     }
 
     fmt.Println(aggregatedTransactions)
 }
 
+func convertToHomeAmount(homeCurrency string, exchangeRates map[Key]float32, transactionLine []string) float32 {
+    transactionCurrency := transactionLine[1]
+    transactionAmount,_ := strconv.ParseFloat(transactionLine[2],32)
+    if (transactionCurrency==homeCurrency) {
+        return float32(transactionAmount)
+    } else {
+        return float32(transactionAmount)*exchangeRates[Key{transactionCurrency, homeCurrency}]
+    }
+}
 
 //load exchange rates into map of maps
 //    GPB ->
