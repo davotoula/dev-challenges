@@ -16,6 +16,22 @@ func check(e error) {
     }
 }
 
+//read each line from transaction
+    //convert to correct exchange rate if needed
+    //add to the partner in map
+
+func main() {
+    //print rates
+    dat, err := ioutil.ReadFile("/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/exchangerates.csv")
+    check(err)
+    fmt.Print(string(dat))
+
+    //load rates into map
+    fmt.Println("\nLoading exchange rates...")
+    exchangeRates := loadExchangeRates("/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/exchangerates.csv")
+    fmt.Println(exchangeRates)
+
+}
 //load exchange rates into map of maps
 //    GPB ->
 //        CHF:1.243
@@ -31,18 +47,7 @@ type Key struct {
     ToCurrency string
 }
 
-//read each line from transaction
-    //convert to correct exchange rate if needed
-    //add to the partner in map
-
-func main() {
-    //print rates
-    dat, err := ioutil.ReadFile("/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/exchangerates.csv")
-    check(err)
-    fmt.Print(string(dat))
-
-    //load rates into map
-    fmt.Println("\nLoading exchange rates...")
+func loadExchangeRates(filePath string) map[Key]float32 {
     csvfile, err := os.Open("/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/exchangerates.csv")
     check(err)
     defer csvfile.Close()
@@ -61,4 +66,6 @@ func main() {
         exchangeRates[Key{fromCurrency, toCurrency}] = float32(exchangeRate)
         fmt.Printf("from %s, to %s, exchange rate is %f\n", fromCurrency, toCurrency, exchangeRates[Key{fromCurrency, toCurrency}])
     }
+
+    return exchangeRates
 }
