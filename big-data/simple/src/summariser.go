@@ -1,10 +1,7 @@
 package main
 
 import (
-    //"bufio"
     "fmt"
-    //"io"
-    //"io/ioutil"
     "os"
     "encoding/csv"
     "strconv"
@@ -17,29 +14,20 @@ func check(e error) {
     }
 }
 
-//read each line from transaction
-    //convert to correct exchange rate if needed
-    //add to the partner in map
-
 func main() {
     //input args
     homeCurrency := "GBP"
 
-    //print rates
-    //dat, err := ioutil.ReadFile("/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/exchangerates.csv")
-    //check(err)
-    //fmt.Print(string(dat))
+    //result object
+    aggregatedTransactions := make(map[string]float32)
 
     //load rates into map
     fmt.Println("\nLoading exchange rates...")
     exchangeRates := loadExchangeRates("/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/exchangerates.csv")
-    //fmt.Println(exchangeRates)
 
     //load transactions one line at a time and start aggregating results
     fmt.Println("\nCalculating partner totals...")
-    aggregatedTransactions := make(map[string]float32)
-
-    csvfile, err := os.Open("/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/transactions2.csv")
+    csvfile, err := os.Open("/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/transactions.csv")
     check(err)
     defer csvfile.Close()
 
@@ -47,17 +35,12 @@ func main() {
     reader.FieldsPerRecord = 3 // Expected records per line
 
     for {
-        transactionLine, err := reader.Read()
+        transactionLine, err := reader.Read() //Reaad one line at a time
 
-        if err != nil {
-            if err == io.EOF {
-                break
-            }
-        }
+        if ((err != nil)&&(err == io.EOF)) {break}
 
-        fmt.Println(transactionLine)
         partnerName := transactionLine[0]
-        aggregatedTransactions[partnerName] = aggregatedTransactions[partnerName] + convertToHomeAmount(homeCurrency, exchangeRates, transactionLine)
+        aggregatedTransactions[partnerName] += convertToHomeAmount(homeCurrency, exchangeRates, transactionLine)
     }
 
     fmt.Println(aggregatedTransactions)
@@ -96,7 +79,7 @@ func loadExchangeRates(filePath string) map[Key]float32 {
     reader := csv.NewReader(csvfile)
     reader.FieldsPerRecord = 3 // Expected records per line
 
-    rawCSVdata, err := reader.ReadAll()
+    rawCSVdata, err := reader.ReadAll() //Read all at once
     check(err)
 
     exchangeRates := make(map[Key]float32)
@@ -105,7 +88,6 @@ func loadExchangeRates(filePath string) map[Key]float32 {
         toCurrency := each[1]
         exchangeRate, _ := strconv.ParseFloat(each[2], 32)
         exchangeRates[Key{fromCurrency, toCurrency}] = float32(exchangeRate)
-        //fmt.Printf("from %s, to %s, exchange rate is %f\n", fromCurrency, toCurrency, exchangeRates[Key{fromCurrency, toCurrency}])
     }
 
     return exchangeRates
