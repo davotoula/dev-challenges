@@ -52,7 +52,11 @@ func main() {
         aggregatedTransactions[partnerName] += convertToHomeAmount(homeCurrency, exchangeRates, transactionLine)
     }
 
-    fmt.Println(aggregatedTransactions)
+    //write aggregated trasnaction to disk
+    writeMapToDiskAsCsv(aggregatedTransactions)
+
+    //output aggregated total for specified partner to console
+    fmt.Printf("%.02f (for partner %s and currency %s)\n",aggregatedTransactions[partner], partner, homeCurrency)
 }
 
 func convertToHomeAmount(homeCurrency string, exchangeRates map[Key]float32, transactionLine []string) float32 {
@@ -62,6 +66,20 @@ func convertToHomeAmount(homeCurrency string, exchangeRates map[Key]float32, tra
         return float32(transactionAmount)
     } else {
         return float32(transactionAmount)*exchangeRates[Key{transactionCurrency, homeCurrency}]
+    }
+}
+
+func writeMapToDiskAsCsv(records map[string]float32) {
+    csvfile, err := os.Create("aggregated_transactions_by_partner.csv")
+    check(err)
+    defer csvfile.Close()
+
+    for k, v := range records {
+
+        _,err = csvfile.WriteString(fmt.Sprintf("%s,%.02f\n",k,v))
+        if err != nil {
+            panic(err)
+        }
     }
 }
 
