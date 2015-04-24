@@ -15,19 +15,28 @@ func check(e error) {
 }
 
 func main() {
-    //input args
-    homeCurrency := "GBP"
+    //input args java -jar Aggregator.jar transactions.csv exchangerates.csv "Defence ltd." GBP
+    if (len(os.Args)!=5) {
+        fmt.Printf("=== Usage %s [transactions file path] [exchange rates file path] [partner to calculate total for] [home currency]\n", os.Args[0])
+        os.Exit(0)
+    }
+
+    transactionsFilePath := os.Args[1]
+    exchangeRatesFilePath := os.Args[2]
+    partner := os.Args[3]
+    homeCurrency := os.Args[4]
+
 
     //result object
     aggregatedTransactions := make(map[string]float32)
 
     //load rates into map
-    fmt.Println("\nLoading exchange rates...")
-    exchangeRates := loadExchangeRates("/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/exchangerates.csv")
+    fmt.Println("Loading exchange rates...")
+    exchangeRates := loadExchangeRates(exchangeRatesFilePath) //"/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/exchangerates.csv"
 
     //load transactions one line at a time and start aggregating results
-    fmt.Println("\nCalculating partner totals...")
-    csvfile, err := os.Open("/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/transactions.csv")
+    fmt.Printf("Calculating partner totals for [%s]...\n",partner)
+    csvfile, err := os.Open(transactionsFilePath) //"/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/transactions2.csv"
     check(err)
     defer csvfile.Close()
 
