@@ -52,7 +52,7 @@ func main() {
         aggregatedTransactions[partnerName] += convertToHomeAmount(homeCurrency, exchangeRates, transactionLine)
     }
 
-    //write aggregated trasnaction to disk
+    //write aggregated transactions to disk
     writeMapToDiskAsCsv(aggregatedTransactions)
 
     //output aggregated total for specified partner to console
