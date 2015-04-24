@@ -4,6 +4,7 @@ import (
     "bufio"
     "fmt"
     "math/rand"
+    "strconv"
 )
 
 func check(e error) {
@@ -13,10 +14,16 @@ func check(e error) {
 }
 
 func main() {
-    //input parameters
-    numPartners := 1000
-    numTransactions := 1000000
-    filePath := "/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/transactions_gen.csv"
+
+    filePath := "transactions_gen.csv"
+
+    if (len(os.Args)!=3) {
+        fmt.Printf("=== Usage %s [number of partners, eg. 1000] [number of total transactions, eg. 1000000] [partner to calculate total for]\n", os.Args[0])
+        os.Exit(0)
+    }
+
+    numPartners,_ := strconv.Atoi(os.Args[1])
+    numTransactions,_ := strconv.Atoi(os.Args[2])
 
     f, err := os.Create(filePath)
     check(err)
