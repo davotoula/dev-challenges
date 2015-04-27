@@ -4,6 +4,7 @@ import (
     "fmt"
     "encoding/csv"
     "strconv"
+    "io"
 )
 
 func main() {
@@ -18,7 +19,9 @@ func main() {
     partner := os.Args[3]
     homeCurrency := os.Args[4]
 
-
+    collectorIn := startCollector(partner, homeCurrency)
+    converterIn := startCurrencyConverter(homeCurrency, collectorIn, exchangeRatesFilePath)
+    startReader(transactionsFilePath,converterIn)
 }
 
 type Transaction struct {
@@ -33,13 +36,13 @@ func startCollector(partner string, homeCurrency string) chan Transaction {
 
     collectorIn := make(chan Transaction)
 
-    go func(collectorInCopy chan Transaction) {
+    go func() {
         //result object
         fmt.Printf("Calculating partner totals for [%s]...\n", partner)
         aggregatedTransactions := make(map[string]float32)
 
         for {
-            message := collectorInCopy
+            message := collectorIn
             if (message!=nil) {
                 aggregatedTransactions[message.PartnerName] += message.Amount
             } else {
@@ -50,7 +53,7 @@ func startCollector(partner string, homeCurrency string) chan Transaction {
         writeMapToDiskAsCsv(aggregatedTransactions)
         fmt.Printf("%.02f (for partner %s and currency %s)\n", aggregatedTransactions[partner], partner, homeCurrency)
 
-    }(collectorIn)
+    }()
 
     return collectorIn
 }
@@ -70,27 +73,53 @@ func writeMapToDiskAsCsv(records map[string]float32) {
 }
 
 // Reader
-func startReader(transactionsFilePath string, ) {
+func startReader(transactionsFilePath string, nextStage chan Transaction) {
 
     //load transactions one line at a time and start aggregating results
     csvfile, err := os.Open(transactionsFilePath) //"/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/transactions2.csv"
     check(err)
     defer csvfile.Close()
 
+    reader := csv.NewReader(csvfile)
+    reader.FieldsPerRecord = 3 // Expected records per line
+
+    for {
+        defer close(nextStage)
+        transactionLine, err := reader.Read() //Reaad one line at a time
+
+        if ((err != nil)&&(err == io.EOF)) {
+            break
+        }
+
+        partnerName := transactionLine[0]
+        amount := transactionLine[1]
+        currency := transactionLine[2]
+
+        nextStage <- Transaction{partnerName, amount, currency}
+    }
+
 }
 
 // Currency converter
 func startCurrencyConverter(homeCurrency string, nextStage chan Transaction, exchangeRatesFilePath string) chan Transaction {
 
+
     currencyConverterIn := make(chan Transaction)
 
     go func() {
+        defer close(nextStage)
+
         //load rates into map
         fmt.Println("Loading exchange rates...")
         exchangeRates := loadExchangeRates(exchangeRatesFilePath) //"/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/exchangerates.csv"
 
         for {
             transaction := <-currencyConverterIn
+
+            if (transaction!=nil) {
+                break
+            }
+
             convertedAmount := convertToHomeAmount(homeCurrency, exchangeRates, transaction)
             nextStage <- Transaction{transaction.PartnerName, convertedAmount, transaction.PartnerName}
         }
