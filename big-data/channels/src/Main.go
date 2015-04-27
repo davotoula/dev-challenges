@@ -42,8 +42,8 @@ func startCollector(partner string, homeCurrency string) chan Transaction {
         aggregatedTransactions := make(map[string]float32)
 
         for {
-            message := collectorIn
-            if (message!=nil) {
+            message, more := <-collectorIn
+            if (more) {
                 aggregatedTransactions[message.PartnerName] += message.Amount
             } else {
                 break
@@ -103,7 +103,6 @@ func startReader(transactionsFilePath string, nextStage chan Transaction) {
 // Currency converter
 func startCurrencyConverter(homeCurrency string, nextStage chan Transaction, exchangeRatesFilePath string) chan Transaction {
 
-
     currencyConverterIn := make(chan Transaction)
 
     go func() {
@@ -114,16 +113,15 @@ func startCurrencyConverter(homeCurrency string, nextStage chan Transaction, exc
         exchangeRates := loadExchangeRates(exchangeRatesFilePath) //"/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/exchangerates.csv"
 
         for {
-            transaction := <-currencyConverterIn
+            transaction,more := <-currencyConverterIn
 
-            if (transaction!=nil) {
+            if (more) {
+                convertedAmount := convertToHomeAmount(homeCurrency, exchangeRates, transaction)
+                nextStage <- Transaction{transaction.PartnerName, convertedAmount, transaction.PartnerName}
+            } else {
                 break
             }
-
-            convertedAmount := convertToHomeAmount(homeCurrency, exchangeRates, transaction)
-            nextStage <- Transaction{transaction.PartnerName, convertedAmount, transaction.PartnerName}
         }
-
     }()
 
     return currencyConverterIn
