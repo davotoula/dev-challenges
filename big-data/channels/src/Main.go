@@ -26,7 +26,7 @@ func main() {
 
 type Transaction struct {
     PartnerName string
-    Amount float64
+    Amount float32
     Currency string
 }
 
@@ -92,10 +92,11 @@ func startReader(transactionsFilePath string, nextStage chan Transaction) {
         }
 
         partnerName := transactionLine[0]
-        amount := transactionLine[1]
+        amount,err := strconv.ParseFloat(transactionLine[1], 32)
+        check(err)
         currency := transactionLine[2]
 
-        nextStage <- Transaction{partnerName, amount, currency}
+        nextStage <- Transaction{partnerName, float32(amount), currency}
     }
 
 }
