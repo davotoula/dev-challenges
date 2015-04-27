@@ -9,6 +9,7 @@ import (
     "strconv"
 )
 
+//wait group to synchronise shutting down of concurrent producers and consumers. Global to prevent data race.
 var wg sync.WaitGroup
 
 func main() {
@@ -23,22 +24,22 @@ func main() {
 
 
     //start single consumer
-    messages, stopConsumer := startConsumer()
+    messagesChannel, stopConsumerChannel := startConsumer()
 
     //start x producers
     wg.Add(producers)
-    stopProducers := make([]chan struct {}, 0)
+    stopProducerChannels := make([]chan struct{}, 0)
     for i := 0; i<producers; i++ {
-        stopProducer := startProducer(messages, fmt.Sprintf("producer%d", i))
-        stopProducers = append(stopProducers, stopProducer)
+        stopProducerChannel := startProducer(messagesChannel, fmt.Sprintf("producer%d", i))
+        stopProducerChannels = append(stopProducerChannels, stopProducerChannel)
     }
 
     //Run the show for 1 second
     time.Sleep(time.Second)
 
     //send done signal to x producers
-    for _, stopProducer := range stopProducers {
-        stopProducer <- struct {}{}
+    for _, stopProducerChannel := range stopProducerChannels {
+        stopProducerChannel <- struct {}{}
     }
 
     //wait for all producers to finish
@@ -46,7 +47,7 @@ func main() {
 
     //increment wait group to wait for consumer to finish
     wg.Add(1)
-    stopConsumer <- struct {}{}
+    stopConsumerChannel <- struct {}{}
     wg.Wait()
 
     fmt.Println("Done...")
@@ -55,29 +56,29 @@ func main() {
 func startConsumer() (chan string, chan struct {}) {
 
     //channels to communicate messages and stop signal
-    messages := make(chan string)
-    stopConsumer := make(chan struct {})
+    messagesChannel := make(chan string)
+    stopConsumerChannel := make(chan struct {})
 
     //start go routine
     go func() {
         //results map
-        counter := make(map[string]int)
+        results := make(map[string]int)
         defer wg.Done()
         fmt.Println("Starting consumer in seperate go routine...")
 
         for {
             select {
-            case msg := <-messages :
-                counter[msg]++
-            case <-stopConsumer :
+            case msg := <-messagesChannel :
+                results[msg]++
+            case <-stopConsumerChannel :
                 fmt.Println("Consumer received done signal...")
-                analyseResults(counter)
+                analyseResults(results)
                 return
             }
         }
     }()
 
-    return messages, stopConsumer
+    return messagesChannel, stopConsumerChannel
 }
 
 func analyseResults(results map[string]int) {
@@ -102,24 +103,24 @@ func analyseResults(results map[string]int) {
 func startProducer(messages chan string, name string) chan struct {} {
 
     //channel to signal to stop this producer
-    stopProducer := make(chan struct {})
+    stopProducerChannel := make(chan struct {})
 
-    go func(stopProducer2 chan struct {}, name2 string) {
-        fmt.Println("Starting producer", name2, "in seperate go routine...")
+    go func(stopProducerChannelCopy chan struct {}, nameCopy string) {
+        fmt.Println("Starting producer", nameCopy, "in seperate go routine...")
 
         //defer decreasing workgroup counter until exit
         defer wg.Done()
 
         for {
             select {
-            case <-stopProducer2 :
-                fmt.Println("Producer", name2, "received done signal...")
+            case <-stopProducerChannelCopy :
+                fmt.Println("Producer", nameCopy, "received done signal...")
                 return
             default :
-                messages <- name2
+                messages <- nameCopy
             }
         }
-    }(stopProducer, name)
+    }(stopProducerChannel, name)
 
-    return stopProducer
+    return stopProducerChannel
 }
