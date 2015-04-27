@@ -106,7 +106,7 @@ func startProducer(messages chan string, name string) chan struct {} {
     stopProducerChannel := make(chan struct {})
 
     go func(stopProducerChannelCopy chan struct {}, nameCopy string) {
-        fmt.Println("Starting producer", nameCopy, "in seperate go routine...")
+        //fmt.Println("Starting producer", nameCopy, "in seperate go routine...")
 
         //defer decreasing workgroup counter until exit
         defer wg.Done()
@@ -114,7 +114,7 @@ func startProducer(messages chan string, name string) chan struct {} {
         for {
             select {
             case <-stopProducerChannelCopy :
-                fmt.Println("Producer", nameCopy, "received done signal...")
+                //fmt.Println("Producer", nameCopy, "received done signal...")
                 return
             default :
                 messages <- nameCopy
