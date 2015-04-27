@@ -92,9 +92,9 @@ func startReader(transactionsFilePath string, nextStage chan Transaction) {
         }
 
         partnerName := transactionLine[0]
-        amount,err := strconv.ParseFloat(transactionLine[1], 32)
+        currency := transactionLine[1]
+        amount,err := strconv.ParseFloat(transactionLine[2], 32)
         check(err)
-        currency := transactionLine[2]
 
         nextStage <- Transaction{partnerName, float32(amount), currency}
     }
