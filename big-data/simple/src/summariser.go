@@ -32,11 +32,11 @@ func main() {
 
     //load rates into map
     fmt.Println("Loading exchange rates...")
-    exchangeRates := loadExchangeRates(exchangeRatesFilePath) //"/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/exchangerates.csv"
+    exchangeRates := loadExchangeRates(exchangeRatesFilePath)
 
     //load transactions one line at a time and start aggregating results
     fmt.Printf("Calculating partner totals for [%s]...\n",partner)
-    csvfile, err := os.Open(transactionsFilePath) //"/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/transactions2.csv"
+    csvfile, err := os.Open(transactionsFilePath)
     check(err)
     defer csvfile.Close()
 
@@ -99,7 +99,7 @@ type Key struct {
 }
 
 func loadExchangeRates(filePath string) map[Key]float32 {
-    csvfile, err := os.Open("/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/exchangerates.csv")
+    csvfile, err := os.Open(filePath)
     check(err)
     defer csvfile.Close()
 
