@@ -5,6 +5,7 @@ import (
     "encoding/csv"
     "strconv"
     "io"
+    "time"
 )
 
 func main() {
@@ -20,7 +21,9 @@ func main() {
     homeCurrency := os.Args[4]
 
     collectorIn := startCollector(partner, homeCurrency)
+    time.Sleep(time.Second)
     converterIn := startCurrencyConverter(homeCurrency, collectorIn, exchangeRatesFilePath)
+    time.Sleep(time.Second)
     startReader(transactionsFilePath,converterIn)
 }
 
@@ -33,7 +36,7 @@ type Transaction struct {
 
 /// Collector
 func startCollector(partner string, homeCurrency string) chan Transaction {
-
+    fmt.Println("startCollector")
     collectorIn := make(chan Transaction)
 
     go func() {
@@ -46,10 +49,12 @@ func startCollector(partner string, homeCurrency string) chan Transaction {
             if (more) {
                 aggregatedTransactions[message.PartnerName] += message.Amount
             } else {
+                fmt.Println("Collector: channel closed, breaking...")
                 break
             }
         }
 
+        fmt.Println("Write results to disk")
         writeMapToDiskAsCsv(aggregatedTransactions)
         fmt.Printf("%.02f (for partner %s and currency %s)\n", aggregatedTransactions[partner], partner, homeCurrency)
 
@@ -73,8 +78,8 @@ func writeMapToDiskAsCsv(records map[string]float32) {
 }
 
 // Reader
-func startReader(transactionsFilePath string, nextStage chan Transaction) {
-
+func startReader(transactionsFilePath string, nextStage chan<- Transaction) {
+    fmt.Println("startReader")
     //load transactions one line at a time and start aggregating results
     csvfile, err := os.Open(transactionsFilePath) //"/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/transactions2.csv"
     check(err)
@@ -84,10 +89,11 @@ func startReader(transactionsFilePath string, nextStage chan Transaction) {
     reader.FieldsPerRecord = 3 // Expected records per line
 
     for {
-        defer close(nextStage)
         transactionLine, err := reader.Read() //Reaad one line at a time
 
         if ((err != nil)&&(err == io.EOF)) {
+            fmt.Println("reader: reached end of file, breaking");
+            close(nextStage)
             break
         }
 
@@ -102,8 +108,8 @@ func startReader(transactionsFilePath string, nextStage chan Transaction) {
 }
 
 // Currency converter
-func startCurrencyConverter(homeCurrency string, nextStage chan Transaction, exchangeRatesFilePath string) chan Transaction {
-
+func startCurrencyConverter(homeCurrency string, nextStage chan Transaction, exchangeRatesFilePath string) chan<- Transaction {
+    fmt.Println("startCurrencyConverter")
     currencyConverterIn := make(chan Transaction)
 
     go func() {
@@ -120,6 +126,7 @@ func startCurrencyConverter(homeCurrency string, nextStage chan Transaction, exc
                 convertedAmount := convertToHomeAmount(homeCurrency, exchangeRates, transaction)
                 nextStage <- Transaction{transaction.PartnerName, convertedAmount, transaction.PartnerName}
             } else {
+                fmt.Println("Currency covertor: incoming channel closed, breaking.")
                 break
             }
         }
