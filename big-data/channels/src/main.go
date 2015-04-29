@@ -98,7 +98,7 @@ func startReader(transactionsFilePath string, nextStage chan<- Transaction) {
         reader := csv.NewReader(csvfile)
         reader.FieldsPerRecord = 3 // Expected records per line
 
-        for {
+        for i:=1;;i++ {
             transactionLine, err := reader.Read() //Reaad one line at a time
 
             if ((err != nil)&&(err == io.EOF)) {
@@ -113,6 +113,9 @@ func startReader(transactionsFilePath string, nextStage chan<- Transaction) {
             check(err)
 
             nextStage <- Transaction{partnerName, float32(amount), currency}
+            if(i%1000000==0) {
+                fmt.Println(i, "records processed...")
+            }
         }
         fmt.Println("Reader routine terminating");
     }()
