@@ -20,11 +20,16 @@ func main() {
     partner := os.Args[3]
     homeCurrency := os.Args[4]
 
-    collectorIn := startCollector(partner, homeCurrency)
+    resultsHaveBeenPrintedChannel := make(chan struct{})
+
+    collectorIn := startCollector(partner, homeCurrency,resultsHaveBeenPrintedChannel)
     time.Sleep(time.Second)
     converterIn := startCurrencyConverter(homeCurrency, collectorIn, exchangeRatesFilePath)
     time.Sleep(time.Second)
     startReader(transactionsFilePath,converterIn)
+
+    //blocks until results have been printed
+    <-resultsHaveBeenPrintedChannel
 }
 
 type Transaction struct {
@@ -35,7 +40,7 @@ type Transaction struct {
 
 
 /// Collector
-func startCollector(partner string, homeCurrency string) chan Transaction {
+func startCollector(partner string, homeCurrency string, resultsHaveBeenPrintedChannel chan struct{}) chan Transaction {
     fmt.Println("startCollector")
     collectorIn := make(chan Transaction)
 
@@ -58,6 +63,7 @@ func startCollector(partner string, homeCurrency string) chan Transaction {
         writeMapToDiskAsCsv(aggregatedTransactions)
         fmt.Printf("%.02f (for partner %s and currency %s)\n", aggregatedTransactions[partner], partner, homeCurrency)
 
+        resultsHaveBeenPrintedChannel<-struct{}{}
     }()
 
     return collectorIn
