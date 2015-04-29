@@ -1,4 +1,16 @@
-A simple approach where the solution is contained in as single routine all execution is synchronous.
+### Introduction
+A simple approach where the solution is contained in as single routine and all execution is synchronous.
+
+### Approach
+The implementation has been seperated into multiple helper functions to make it more modular but it all executes synchronously as no separate threads / routines are started.
+
+### Results
+
+In summary this simple solution performs better than the solution with channels. I suspect that for a simple problem like this, the channel overhead is not worth it.
+
+For a more cpu intensive task I believe the channel overhead would be compensated by having multiple cores diving the workload.
+
+Worse if multiple cores are used
 
 Single core:
 

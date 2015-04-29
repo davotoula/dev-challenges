@@ -1,4 +1,21 @@
+### Introduction
 An approach that is using asynchronous concurrent go routines and communication and synchronisation via go channels.
+
+### Approach
+The problem has been divided into multiple steps in a pipe-line: 
+ * read line
+ * do currency conversion if necessary
+ * group and calculate sum
+ 
+Closing a channel is used as a signal for the next step in the pipe-line that there is no more to process and the routine should exit.
+
+One final signal channel is used to signal to the main process that output is finished and the application can terminate
+
+### Results
+
+Slower than the simple solution.
+
+Even worse if multiple cores are used.
 
 Single core:
 
