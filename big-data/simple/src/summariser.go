@@ -43,13 +43,17 @@ func main() {
     reader := csv.NewReader(csvfile)
     reader.FieldsPerRecord = 3 // Expected records per line
 
-    for {
+    for i:=1;;i++ {
         transactionLine, err := reader.Read() //Reaad one line at a time
 
         if ((err != nil)&&(err == io.EOF)) {break}
 
         partnerName := transactionLine[0]
         aggregatedTransactions[partnerName] += convertToHomeAmount(homeCurrency, exchangeRates, transactionLine)
+
+        if(i%1000000==0) {
+            fmt.Println(i, "records processed...")
+        }
     }
 
     //write aggregated transactions to disk
