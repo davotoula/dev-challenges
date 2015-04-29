@@ -30,6 +30,7 @@ func main() {
 
     //blocks until results have been printed
     <-resultsHaveBeenPrintedChannel
+    fmt.Println("Results channel closed, exiting main")
 }
 
 type Transaction struct {
@@ -41,7 +42,7 @@ type Transaction struct {
 
 /// Collector
 func startCollector(partner string, homeCurrency string, resultsHaveBeenPrintedChannel chan struct{}) chan Transaction {
-    fmt.Println("startCollector")
+    fmt.Println("Starting Collector")
     collectorIn := make(chan Transaction)
 
     go func() {
@@ -64,6 +65,7 @@ func startCollector(partner string, homeCurrency string, resultsHaveBeenPrintedC
         fmt.Printf("%.02f (for partner %s and currency %s)\n", aggregatedTransactions[partner], partner, homeCurrency)
 
         resultsHaveBeenPrintedChannel<-struct{}{}
+        fmt.Println("Collector routine terminating...");
     }()
 
     return collectorIn
@@ -85,31 +87,35 @@ func writeMapToDiskAsCsv(records map[string]float32) {
 
 // Reader
 func startReader(transactionsFilePath string, nextStage chan<- Transaction) {
-    fmt.Println("startReader")
-    //load transactions one line at a time and start aggregating results
-    csvfile, err := os.Open(transactionsFilePath) //"/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/transactions2.csv"
-    check(err)
-    defer csvfile.Close()
 
-    reader := csv.NewReader(csvfile)
-    reader.FieldsPerRecord = 3 // Expected records per line
-
-    for {
-        transactionLine, err := reader.Read() //Reaad one line at a time
-
-        if ((err != nil)&&(err == io.EOF)) {
-            fmt.Println("reader: reached end of file, breaking");
-            close(nextStage)
-            break
-        }
-
-        partnerName := transactionLine[0]
-        currency := transactionLine[1]
-        amount,err := strconv.ParseFloat(transactionLine[2], 32)
+    go func() {
+        fmt.Println("Starting Reader")
+        //load transactions one line at a time and start aggregating results
+        csvfile, err := os.Open(transactionsFilePath) //"/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/transactions2.csv"
         check(err)
+        defer csvfile.Close()
 
-        nextStage <- Transaction{partnerName, float32(amount), currency}
-    }
+        reader := csv.NewReader(csvfile)
+        reader.FieldsPerRecord = 3 // Expected records per line
+
+        for {
+            transactionLine, err := reader.Read() //Reaad one line at a time
+
+            if ((err != nil)&&(err == io.EOF)) {
+                fmt.Println("Reader: reached end of file, breaking");
+                close(nextStage)
+                break
+            }
+
+            partnerName := transactionLine[0]
+            currency := transactionLine[1]
+            amount, err := strconv.ParseFloat(transactionLine[2], 32)
+            check(err)
+
+            nextStage <- Transaction{partnerName, float32(amount), currency}
+        }
+        fmt.Println("Reader routine terminating");
+    }()
 
 }
 
@@ -136,6 +142,7 @@ func startCurrencyConverter(homeCurrency string, nextStage chan Transaction, exc
                 break
             }
         }
+        fmt.Println("Currency Converter routine terminating...");
     }()
 
     return currencyConverterIn
@@ -147,7 +154,7 @@ type Key struct {
 }
 
 func loadExchangeRates(filePath string) map[Key]float32 {
-    csvfile, err := os.Open("/Users/david.kaspar/CODE/dev-challenges/big-data/simple/src/exchangerates.csv")
+    csvfile, err := os.Open(filePath)
     check(err)
     defer csvfile.Close()
 
