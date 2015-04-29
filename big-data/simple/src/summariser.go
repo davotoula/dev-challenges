@@ -6,6 +6,7 @@ import (
     "encoding/csv"
     "strconv"
     "io"
+    "time"
 )
 
 func check(e error) {
@@ -15,6 +16,8 @@ func check(e error) {
 }
 
 func main() {
+    start := time.Now()
+
     //input args java -jar Aggregator.jar transactions.csv exchangerates.csv "Defence ltd." GBP
     if (len(os.Args)!=5) {
         fmt.Printf("=== Usage %s [transactions file path] [exchange rates file path] [partner to calculate total for] [home currency]\n", os.Args[0])
@@ -61,6 +64,9 @@ func main() {
 
     //output aggregated total for specified partner to console
     fmt.Printf("%.02f (for partner %s and currency %s)\n",aggregatedTransactions[partner], partner, homeCurrency)
+
+    elapsed := time.Since(start)
+    fmt.Printf("Excution took %s\n", elapsed)
 }
 
 func convertToHomeAmount(homeCurrency string, exchangeRates map[Key]float32, transactionLine []string) float32 {

@@ -9,6 +9,8 @@ import (
 )
 
 func main() {
+    start := time.Now()
+
     //input args java -jar Aggregator.jar transactions.csv exchangerates.csv "Defence ltd." GBP
     if (len(os.Args)!=5) {
         fmt.Printf("=== Usage %s [transactions file path] [exchange rates file path] [partner to calculate total for] [home currency]\n", os.Args[0])
@@ -31,6 +33,9 @@ func main() {
     //blocks until results have been printed
     <-resultsHaveBeenPrintedChannel
     fmt.Println("Results channel closed, exiting main")
+
+    elapsed := time.Since(start)
+    fmt.Printf("Excution took %s\n", elapsed)
 }
 
 type Transaction struct {
