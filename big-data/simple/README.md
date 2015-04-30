@@ -6,6 +6,8 @@ The implementation has been seperated into multiple helper functions to make it 
 
 ### Results
 
+10,000,000 transactions and 1,000 unique partners.
+
 In summary this simple solution performs better than the solution with channels. I suspect that for a simple problem like this, the channel overhead is not worth it.
 
 For a more cpu intensive task I believe the channel overhead would be compensated by having multiple cores diving the workload.

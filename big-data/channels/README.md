@@ -13,6 +13,8 @@ One final signal channel is used to signal to the main process that output is fi
 
 ### Results
 
+10,000,000 transactions and 1,000 unique partners.
+
 Slower than the simple solution.
 
 Even worse if multiple cores are used.
