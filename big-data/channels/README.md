@@ -107,5 +107,5 @@ Write results to disk
 501056480.00 (for partner Partner 1 and currency GBP)
 Collector routine terminating...
 Results channel closed, exiting main
-Excution took 3m25.115834577s
+Excution took 2m59.921913328s
 ```
