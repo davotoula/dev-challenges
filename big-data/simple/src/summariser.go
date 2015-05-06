@@ -7,6 +7,9 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"flag"
+	"log"
+	"runtime/pprof"
 )
 
 func check(e error) {
@@ -16,29 +19,39 @@ func check(e error) {
 }
 
 func main() {
-	start := time.Now()
+	//define input arguments
+	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to file")
+	transactionsFilePath := flag.String("tf", "transactions.csv", "transactions file")
+	exchangeRatesFilePath := flag.String("ef", "exchangerates.csv", "exchange rates file")
+	partner := flag.String("partner", "Partner 1", "the partner name to group by")
+	homeCurrency := flag.String("hc", "GBP", "Home currency to use")
 
-	//input args java -jar Aggregator.jar transactions.csv exchangerates.csv "Defence ltd." GBP
-	if len(os.Args) != 5 {
-		fmt.Printf("=== Usage %s [transactions file path] [exchange rates file path] [partner to calculate total for] [home currency]\n", os.Args[0])
-		os.Exit(0)
+	//parse for input arguments
+	flag.Parse()
+
+	if *cpuprofile != "" {
+		fmt.Println("running profiler")
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
 	}
 
-	transactionsFilePath := os.Args[1]
-	exchangeRatesFilePath := os.Args[2]
-	partner := os.Args[3]
-	homeCurrency := os.Args[4]
+
+	start := time.Now()
 
 	//result object
 	aggregatedTransactions := make(map[string]float32)
 
 	//load rates into map
 	fmt.Println("Loading exchange rates...")
-	exchangeRates := loadExchangeRates(exchangeRatesFilePath)
+	exchangeRates := loadExchangeRates(*exchangeRatesFilePath)
 
 	//load transactions one line at a time and start aggregating results
-	fmt.Printf("Calculating partner totals for [%s]...\n", partner)
-	csvfile, err := os.Open(transactionsFilePath)
+	fmt.Printf("Calculating partner totals for [%s]...\n", *partner)
+	csvfile, err := os.Open(*transactionsFilePath)
 	check(err)
 	defer csvfile.Close()
 
@@ -53,7 +66,7 @@ func main() {
 		}
 
 		partnerName := transactionLine[0]
-		aggregatedTransactions[partnerName] += convertToHomeAmount(homeCurrency, exchangeRates, transactionLine)
+		aggregatedTransactions[partnerName] += convertToHomeAmount(*homeCurrency, exchangeRates, transactionLine)
 
 		if i%1000000 == 0 {
 			fmt.Println(i, "records processed...")
@@ -64,7 +77,7 @@ func main() {
 	writeMapToDiskAsCsv(aggregatedTransactions)
 
 	//output aggregated total for specified partner to console
-	fmt.Printf("%.02f (for partner %s and currency %s)\n", aggregatedTransactions[partner], partner, homeCurrency)
+	fmt.Printf("%.02f (for partner %s and currency %s)\n", aggregatedTransactions[*partner], *partner, *homeCurrency)
 
 	elapsed := time.Since(start)
 	fmt.Printf("Excution took %s\n", elapsed)
