@@ -43,7 +43,7 @@ func main() {
 	start := time.Now()
 
 	//result object
-	aggregatedTransactions := make(map[string]float32)
+	aggregatedTransactions := make(map[string]float32,200)
 
 	//load rates into map
 	fmt.Println("Loading exchange rates...")
@@ -133,7 +133,7 @@ func loadExchangeRates(filePath string) map[Key]float32 {
 	rawCSVdata, err := reader.ReadAll() //Read all at once
 	check(err)
 
-	exchangeRates := make(map[Key]float32)
+	exchangeRates := make(map[Key]float32,100)
 	for _, each := range rawCSVdata {
 		fromCurrency := each[0]
 		toCurrency := each[1]
