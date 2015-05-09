@@ -10,6 +10,7 @@ import (
 	"flag"
 	"log"
 	"runtime/pprof"
+	"runtime"
 )
 
 func check(e error) {
@@ -25,6 +26,7 @@ func main() {
 	exchangeRatesFilePath := flag.String("ef", "exchangerates.csv", "exchange rates file")
 	partner := flag.String("partner", "Partner 1", "the partner name to group by")
 	homeCurrency := flag.String("hc", "GBP", "Home currency to use")
+	cores := flag.Int("cores", 1, "How many cores to use for execution")
 
 	//parse for input arguments
 	flag.Parse()
@@ -39,11 +41,13 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
+	fmt.Println("Found",runtime.NumCPU(),"cores. Instructed to use",*cores,"cores.")
+	runtime.GOMAXPROCS(*cores)
 
 	start := time.Now()
 
 	//result object
-	aggregatedTransactions := make(map[string]float32,200)
+	aggregatedTransactions := make(map[string]float64,200)
 
 	//load rates into map
 	fmt.Println("Loading exchange rates...")
@@ -83,17 +87,17 @@ func main() {
 	fmt.Printf("Excution took %s\n", elapsed)
 }
 
-func convertToHomeAmount(homeCurrency string, exchangeRates map[Key]float32, transactionLine []string) float32 {
+func convertToHomeAmount(homeCurrency string, exchangeRates map[Key]float64, transactionLine []string) float64 {
 	transactionCurrency := transactionLine[1]
-	transactionAmount, _ := strconv.ParseFloat(transactionLine[2], 32)
+	transactionAmount, _ := strconv.ParseFloat(transactionLine[2], 64)
 	if transactionCurrency == homeCurrency {
-		return float32(transactionAmount)
+		return transactionAmount
 	} else {
-		return float32(transactionAmount) * exchangeRates[Key{transactionCurrency, homeCurrency}]
+		return transactionAmount * exchangeRates[Key{transactionCurrency, homeCurrency}]
 	}
 }
 
-func writeMapToDiskAsCsv(records map[string]float32) {
+func writeMapToDiskAsCsv(records map[string]float64) {
 	csvfile, err := os.Create("aggregated_transactions_by_partner.csv")
 	check(err)
 	defer csvfile.Close()
@@ -122,7 +126,7 @@ type Key struct {
 	ToCurrency   string
 }
 
-func loadExchangeRates(filePath string) map[Key]float32 {
+func loadExchangeRates(filePath string) map[Key]float64 {
 	csvfile, err := os.Open(filePath)
 	check(err)
 	defer csvfile.Close()
@@ -133,12 +137,12 @@ func loadExchangeRates(filePath string) map[Key]float32 {
 	rawCSVdata, err := reader.ReadAll() //Read all at once
 	check(err)
 
-	exchangeRates := make(map[Key]float32,100)
+	exchangeRates := make(map[Key]float64,100)
 	for _, each := range rawCSVdata {
 		fromCurrency := each[0]
 		toCurrency := each[1]
-		exchangeRate, _ := strconv.ParseFloat(each[2], 32)
-		exchangeRates[Key{fromCurrency, toCurrency}] = float32(exchangeRate)
+		exchangeRate, _ := strconv.ParseFloat(each[2], 64)
+		exchangeRates[Key{fromCurrency, toCurrency}] = exchangeRate
 	}
 
 	return exchangeRates
