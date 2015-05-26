@@ -39,6 +39,8 @@ Display hashTags within a moving time frame. It means that the UI should show th
 ```
 
 ## Mockup
+![Image of Tap Twitter stream UI]
+(https://cloud.githubusercontent.com/assets/1747287/7809953/fbdb7d3a-0395-11e5-8a61-de1966617803.jpg)
 
 ## Delivery
 As it should be a running web application I would recommend to pick a cloud provider where you could potentially deploy your application for DEMO purpose. The organisers definitely don't want to run 100 different type of web applications locally. ;) It can be AWS, Heroku or any other cloud provider what you prefer.
